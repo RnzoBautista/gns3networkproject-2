@@ -1,7 +1,7 @@
 # NETWORK PROJECT #2
 <h2 align="center">Dual-Site Enterprise Network Design in GNS3 | SD-WAN + BGP + Route-Map Configuration</h2>
 
-![Network Topology](/Screenshot.png)
+![Network Topology](/NetworkProject-2.png)
 
 **Overview:**
 This GNS3 lab demonstrates a dual-site enterprise network (HQ and Branch) with:
