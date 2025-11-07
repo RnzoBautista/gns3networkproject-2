@@ -10,7 +10,7 @@ This GNS3 lab demonstrates a dual-site enterprise network (HQ and Branch) with:
 - Route-maps (AS-path prepend / local preference) to influence routing
 - IPsec tunnels for site-to-site secure connectivity (tunnel over dynamic routing)
 
-Check my youtube channel for the actual configuration.
+Check my Youtube channel for the actual configuration. 
 ---
 *Renzo Bautista*  
 - Computer Engineer | CCNA Certified  
