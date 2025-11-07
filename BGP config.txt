@@ -1,0 +1,184 @@
+hostname R1
+!
+interface g0/1
+ ip address 172.16.1.1 255.255.255.0
+ no shut
+!
+interface Loopback0
+ ip address 1.1.1.1 255.255.255.255
+ no shut
+!
+router ospf 1
+router-id 1.1.1.1
+network 172.16.1.0 0.0.0.255 area 0
+network 1.1.1.1 0.0.0.0 area 0
+!
+router bgp 65001
+network 172.16.1.0 mask 255.255.255.0
+neighbor 2.2.2.2 remote-as 65001
+neighbor 3.3.3.3 remote-as 65001
+neighbor 2.2.2.2 update-source loopback0
+neighbor 3.3.3.3 update-source loopback0
+=================================
+=================================
+
+hostname R2
+!
+interface g0/1
+ ip address 172.16.1.2 255.255.255.0
+ no shut
+!
+interface g0/2
+ ip address 10.1.1.2 255.255.255.0
+ no shut
+!
+interface Loopback0
+ ip address 2.2.2.2 255.255.255.255
+ no shut
+!
+router ospf 1
+router-id 2.2.2.2
+network 10.1.1.0 0.0.0.255 area 0
+network 172.16.1.0 0.0.0.255 area 0
+network 2.2.2.2 0.0.0.0 area 0
+!
+router bgp 65001
+neighbor 1.1.1.1 remote-as 65001
+neighbor 1.1.1.1 update-source loopback0
+neighbor 3.3.3.3 remote-as 65001
+neighbor 3.3.3.3 update-source loopback0
+network 10.1.1.0 mask 255.255.255.0
+
+neighbor 3.3.3.3 route-reflector-client
+neighbor 1.1.1.1 route-reflector-client
+
+=================================
+=================================
+
+hostname R3
+!
+interface g0/1
+ ip address 10.1.1.1 255.255.255.0
+ no shut
+!
+interface g0/2
+ ip address 198.51.100.1 255.255.255.252
+ no shut
+!
+interface g0/3
+ ip address 198.51.100.5 255.255.255.252
+ no shut
+!
+interface Loopback0
+ ip address 3.3.3.3 255.255.255.255
+ no shut
+!
+router ospf 1
+router-id 3.3.3.3 
+network 10.1.1.0 0.0.0.255 area 0
+network 3.3.3.3 0.0.0.0 area 0
+!
+router bgp 65001
+neighbor 198.51.100.2 remote-as 65002
+neighbor 198.51.100.6 remote-as 65004
+neighbor 1.1.1.1 remote-as 65001
+neighbor 1.1.1.1 update-source loopback0
+neighbor 2.2.2.2 remote-as 65001
+neighbor 2.2.2.2 update-source loopback0
+
+neighbor 2.2.2.2 next-hop-self
+!
+=================================
+=================================
+NEW TOPIC - PREFIX LIST INBOUND AND OUTBOUND
+ip prefix-list BGP-DEMO deny 10.0.0.0/8 le 32
+ip prefix-list BGP-DEMO deny 172.16.0.0/12 le 32
+ip prefix-list BGP-DEMO deny 192.168.0.0/16 le 32
+ip prefix-list BGP-DEMO permit 0.0.0.0/8 
+ip prefix-list BGP-DEMO permit 0.0.0.0/8 ge 32
+	
+R3(config)#router bgp 65001
+R3(config-router)#neighbor BGP-PG peer-group
+R3(config-router)#neighbor BGP-PG prefix-list BGP-DEMO in
+R3(config-router)#neighbor 198.51.100.2 peer-group BGP-PG
+R3(config-router)#neighbor 198.51.100.6 peer-group BGP-PG
+=================================
+=================================
+R3(config)#route-map LOCALPREF-ISP1
+R3(config-route-map)#set local-preference 100
+R3(config)#route-map LOCALPREF-ISP2
+R3(config-route-map)#set local-preference 200
+R3(config)#router bgp 65001
+R3(config-router)#neighbor 198.51.100.2 route-map LOCALPREF-ISP1 in
+R3(config-router)#neighbor 198.51.100.6 route-map LOCALPREF-ISP2 in
+
+R3(config)#route-map ASPATH
+R3(config-route-map)#set as-path prepend 65001 65001
+R3(config)#router bgp 65001
+R3(config-router)#neighbor 198.51.100.2 route-map ASPATH out
+=================================
+=================================
+hostname ISP1
+!
+interface g0/1
+ ip address 198.51.100.2 255.255.255.252
+ no shut
+!
+interface g0/2
+ ip address 203.0.113.1 255.255.255.252
+ no shut
+!
+interface Loopback0
+ ip address 4.4.4.4 255.255.255.255
+ no shut
+!
+router bgp 65002
+neighbor 198.51.100.1 remote-as 65001
+neighbor 203.0.113.2 remote-as 65003
+network 203.0.113.0 mask 255.255.255.252
+network 198.51.100.0 mask 255.255.255.252
+
+=================================
+=================================
+hostname ISP2
+!
+interface g0/1
+ ip address 198.51.100.6 255.255.255.252
+ no shut
+!
+interface g0/2
+ ip address 203.0.113.6 255.255.255.252
+ no shut
+!
+interface Loopback0
+ ip address 6.6.6.6 255.255.255.255
+ no shut
+!
+router bgp 65004
+neighbor 203.0.113.5 remote-as 65003
+neighbor 198.51.100.5 remote-as 65001
+network 203.0.113.4 mask 255.255.255.252
+network 198.51.100.4 mask 255.255.255.252
+=================================
+=================================
+hostname INTERNET
+!
+interface g0/1
+ ip address 203.0.113.2 255.255.255.252
+ no shut
+!
+interface g0/2
+ ip address 203.0.113.5 255.255.255.252
+ no shut
+!
+interface Loopback0
+ ip address 5.5.5.5 255.255.255.0
+ no shut
+!
+router bgp 65003
+neighbor 203.0.113.1 remote-as 65002
+neighbor 203.0.113.6 remote-as 65004
+network 5.5.5.0 mask 255.255.255.0
+network 203.0.113.0 mask 255.255.255.252
+network 203.0.113.4 mask 255.255.255.252
+
